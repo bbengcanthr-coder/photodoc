@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090909">
+<title>Photodoc — Keep the moment.</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap');
+:root{--bg:#090909;--panel:#111;--panel2:#171717;--line:#2b2b2b;--muted:#898989;--white:#f5f5f2;--lime:#d7ff64}
+*{box-sizing:border-box}
+html{background:var(--bg);scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--white);font-family:'DM Sans','IBM Plex Sans Thai',sans-serif;min-height:100vh}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+.app{width:min(100%,1180px);margin:auto;padding:0 24px 42px}
+.topbar{height:78px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #222}
+.brand{display:flex;align-items:center;gap:10px;color:var(--white);text-decoration:none;font-weight:700;font-size:19px;letter-spacing:-.7px}
+.brandmark{width:30px;height:30px;border:1px solid #555;border-radius:9px;display:grid;place-items:center}
+.brandmark svg{width:17px;height:17px}
+.topmeta{display:flex;align-items:center;gap:8px;color:#999;font-size:11px;letter-spacing:1.6px;text-transform:uppercase}
+.live-dot{height:6px;width:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 12px #d7ff6455}
+.hero{padding:46px 0 30px;display:flex;justify-content:space-between;align-items:end;gap:20px}
+.eyebrow{font-size:10px;letter-spacing:2.5px;color:var(--lime);text-transform:uppercase;margin:0 0 13px}
+h1{font-size:clamp(39px,7vw,70px);line-height:.98;letter-spacing:-3.7px;margin:0;font-weight:600}
+h1 span{color:#777}
+.hero-copy{max-width:245px;color:#999;font-size:13px;line-height:1.7;margin:0 0 4px}
+.workspace{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:18px;align-items:start}
+.preview-panel,.editor-panel{background:var(--panel);border:1px solid #242424;border-radius:18px;overflow:hidden}
+.panel-head{height:55px;padding:0 18px;border-bottom:1px solid #242424;display:flex;align-items:center;justify-content:space-between}
+.panel-label{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:#a5a5a5}
+.panel-count{font-size:11px;color:#686868}
+.photo-stage{padding:16px;position:relative}
+.photo-wrap{aspect-ratio:4/5;max-height:660px;position:relative;background:#1b1b1b;border-radius:9px;overflow:hidden;display:grid;place-items:center}
+.photo-wrap:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,#292929 0%,#171717 62%,#101010 100%)}
+#photoPreview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.empty-state{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px}
+.camera-icon{width:58px;height:58px;border:1px solid #454545;border-radius:18px;display:grid;place-items:center;margin-bottom:20px;color:#ddd}
+.camera-icon svg{width:25px;height:25px}
+.empty-title{font-size:17px;font-weight:500;letter-spacing:-.3px;margin-bottom:7px}
+.empty-sub{font-size:12px;color:#888;line-height:1.6;max-width:220px}
+.photo-overlay{display:none;position:absolute;z-index:2;left:15px;right:15px;bottom:15px;padding:17px 17px 15px;background:rgba(9,9,9,.78);backdrop-filter:blur(16px);border:1px solid #ffffff2c;border-radius:5px}
+.overlay-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.location{font-size:10px;letter-spacing:1.7px;text-transform:uppercase;color:#fff}
+.date-label{font-size:9px;color:#d0d0d0;letter-spacing:1px}
+.caption-output{font-family:'IBM Plex Sans Thai','DM Sans',sans-serif;font-size:clamp(13px,2vw,17px);line-height:1.5;color:#fff;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.corner-bars{position:absolute;inset:9px;pointer-events:none;z-index:3;display:none}
+.bar{position:absolute;background:#fff;border-radius:20px;opacity:.95}
+.bar.top,.bar.bottom{width:40px;height:3px;left:calc(50% - 20px)}
+.bar.top{top:0}.bar.bottom{bottom:0}
+.bar.left,.bar.right{height:40px;width:3px;top:calc(50% - 20px)}
+.bar.left{left:0}.bar.right{right:0}
+.photo-wrap.has-photo .corner-bars{display:block}
+.photo-wrap.has-photo .photo-overlay{display:block}
+.photo-wrap.has-photo .empty-state{display:none}
+.photo-actions{display:flex;gap:8px;margin-top:12px}
+.btn{border:1px solid #383838;border-radius:9px;background:#191919;color:#eee;min-height:43px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;gap:9px;font-size:12px;font-weight:500;transition:background .2s,border-color .2s}
+.btn:hover{background:#242424;border-color:#555}
+.btn svg{width:16px;height:16px}
+.btn.primary{background:var(--lime);color:#101010;border-color:var(--lime);font-weight:700}
+.btn.primary:hover{background:#e4ff9b}
+.btn.grow{flex:1}
+.btn.icon-only{width:43px;padding:0}
+.editor-panel{padding-bottom:16px}
+.editor-content{padding:19px}
+.field{margin-bottom:19px}
+.field-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+label,.field-label{font-size:11px;color:#c9c9c9;font-weight:500}
+.field-hint{font-size:10px;color:#777}
+.input,.textarea,.select{width:100%;background:#0c0c0c;color:#f4f4f4;border:1px solid #303030;border-radius:9px;padding:12px 13px;font-size:13px;outline:none}
+.input:focus,.textarea:focus,.select:focus{border-color:#777}
+.textarea{resize:vertical;min-height:88px;line-height:1.55}
+.location-row{display:flex;gap:8px}
+.location-row .input{min-width:0}
+.location-row .btn{white-space:nowrap;padding:0 11px}
+.segmented{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid #292929;background:#0a0a0a;border-radius:10px}
+.segmented button{border:0;border-radius:7px;background:transparent;color:#888;padding:9px 8px;font-size:12px}
+.segmented button.active{background:#262626;color:#fff}
+.caption-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:9px}
+.text-button{border:0;background:transparent;color:var(--lime);font-size:11px;padding:5px 0}
+.char-count{font-size:10px;color:#666}
+.divider{height:1px;background:#252525;margin:18px 0}
+.export-btn{width:100%;min-height:49px;font-size:13px}
+.privacy-note{display:flex;gap:8px;color:#777;font-size:10px;line-height:1.5;margin:12px 2px 0}
+.privacy-note svg{width:14px;height:14px;flex-shrink:0;margin-top:1px}
+.bottomline{display:flex;justify-content:space-between;gap:20px;color:#626262;font-size:10px;letter-spacing:.7px;margin-top:20px;text-transform:uppercase}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#f4f4f0;color:#111;padding:12px 17px;border-radius:9px;font-size:12px;opacity:0;pointer-events:none;transition:.25s;z-index:10;box-shadow:0 8px 30px #0008;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+input[type=file]{display:none}
+@media(max-width:760px){
+ .app{padding:0 15px 28px}.topbar{height:64px}.hero{padding:32px 0 23px;display:block}h1{font-size:48px;letter-spacing:-2.7px}.hero-copy{margin-top:15px;max-width:290px;font-size:12px}
+ .workspace{grid-template-columns:1fr;gap:13px}.preview-panel,.editor-panel{border-radius:15px}.photo-stage{padding:11px}.photo-wrap{aspect-ratio:4/5;max-height:none}.photo-overlay{left:12px;right:12px;bottom:12px;padding:14px}.caption-output{font-size:15px}.editor-content{padding:16px}
+ .bottomline{font-size:9px;margin-top:17px}.topmeta{font-size:9px;letter-spacing:1px}
+}
+@media(min-width:761px){.editor-panel{position:sticky;top:16px}.photo-stage{padding:20px}.photo-wrap{aspect-ratio:4/5}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <a class="brand" href="#" aria-label="Photodoc home"><span class="brandmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M8 6l1.4-2h5.2L16 6"/><circle cx="12" cy="13" r="3.2"/></svg></span>photodoc</a>
+  <div class="topmeta"><span class="live-dot"></span> Your life, documented</div>
+</header>
+<section class="hero">
+  <div><p class="eyebrow">A little archive of your life</p><h1>Keep the<br><span>moment.</span></h1></div>
+  <p class="hero-copy">One photo, one place, one line worth remembering. Make ordinary days feel like something.</p>
+</section>
+<main class="workspace">
+<section class="preview-panel">
+  <div class="panel-head"><span class="panel-label">01 / Photo preview</span><span class="panel-count" id="photoStatus">Waiting for a moment</span></div>
+  <div class="photo-stage">
+    <div class="photo-wrap" id="photoWrap">
+      <img id="photoPreview" alt="Your selected photo preview">
+      <div class="empty-state">
+        <div class="camera-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7.5h3l1.5-2h7l1.5 2h3A1.5 1.5 0 0 1 21.5 9v9a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        <div class="empty-title">A moment, waiting to happen.</div><div class="empty-sub">Take a photo or choose one from your camera roll to begin.</div>
+      </div>
+      <div class="corner-bars" aria-hidden="true"><i class="bar top"></i><i class="bar bottom"></i><i class="bar left"></i><i class="bar right"></i></div>
+      <div class="photo-overlay"><div class="overlay-top"><span class="location" id="overlayLocation">BANGKOK, THAILAND</span><span class="date-label" id="overlayDate"></span></div><p class="caption-output" id="overlayCaption">A quiet moment, kept forever.</p></div>
+    </div>
+    <div class="photo-actions">
+      <button class="btn primary grow" id="takePhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7.5h3l1.5-2h7l1.5 2h3A1.5 1.5 0 0 1 21.5 9v9a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z"/><circle cx="12" cy="13" r="4"/></svg> Take a photo</button>
+      <button class="btn grow" id="choosePhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg> Choose photo</button>
+      <input id="cameraInput" type="file" accept="image/*" capture="environment">
+      <input id="fileInput" type="file" accept="image/*">
+    </div>
+  </div>
+</section>
+<section class="editor-panel">
+  <div class="panel-head"><span class="panel-label">02 / Make it yours</span><span class="panel-count">PHOTO NOTE</span></div>
+  <div class="editor-content">
+    <div class="field">
+      <div class="field-head"><label for="place">Location</label><span class="field-hint">City / Province + Country</span></div>
+      <div class="location-row"><input class="input" id="place" value="Bangkok, Thailand" maxlength="70" aria-label="City or province and country"><button class="btn icon-only" id="locate" title="Use my location" aria-label="Use my location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg></button></div>
+    </div>
+    <div class="field">
+      <div class="field-head"><label>Caption language</label><span class="field-hint">Pick your mood</span></div>
+      <div class="segmented"><button class="active" data-lang="en">English</button><button data-lang="th">ภาษาไทย</button></div>
+    </div>
+    <div class="field">
+      <div class="field-head"><label for="caption">Your caption</label><span class="field-hint">Editable anytime</span></div>
+      <textarea class="textarea" id="caption" maxlength="180">A quiet moment, kept forever.</textarea>
+      <div class="caption-tools"><button class="text-button" id="newCaption">↻ Generate a new caption</button><span class="char-count" id="charCount">31 / 180</span></div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn primary export-btn" id="download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12m-5-5 5 5 5-5"/><path d="M4 16v4h16v-4"/></svg> Export photo card</button>
+    <div class="privacy-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Your photos stay in this browser. Location is only used when you choose to share it. No account required.</span></div>
+  </div>
+</section>
+</main>
+<footer class="bottomline"><span>PHOTODOC © 2026</span><span>Made for the moments in between.</span></footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+const $=id=>document.getElementById(id);
+let currentImage=null, language='en';
+const captions={
+ en:[
+  'A quiet moment, kept forever.',
+  'Collecting little things that feel like everything.',
+  'Somewhere between the light and the moment.',
+  'A day I want to remember, just as it was.',
+  'Taking the long way, for once.',
+  'Life lately, in the softest light.',
+  'Here for a while. Present for it all.',
+  'Proof that an ordinary day can be beautiful.',
+  'A small pause in a world that moves fast.',
+  'The kind of day that stays with you.'
+ ],
+ th:[
+  'เก็บช่วงเวลาธรรมดา ให้กลายเป็นความทรงจำ',
+  'วันนี้ ในแสงที่กำลังพอดี',
+  'บางช่วงเวลา ก็สวยงามโดยไม่ต้องพยายาม',
+  'บันทึกวันธรรมดาที่อยากจดจำ',
+  'ค่อย ๆ ใช้ชีวิต แล้วมองให้เห็นความสวยงาม',
+  'ช่วงเวลาสั้น ๆ ที่อยากเก็บไว้นาน ๆ',
+  'แสงสวย วันดี และความทรงจำเล็ก ๆ',
+  'ปล่อยให้วันนี้เป็นไปอย่างที่ควรจะเป็น',
+  'ความสุขบางทีก็เรียบง่ายแค่นี้',
+  'อยู่ตรงนี้ กับช่วงเวลาตรงหน้า'
+ ]
+};
+function today(){return new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric'}).format(new Date()).toUpperCase()}
+$('overlayDate').textContent=today();
+function sync(){
+ const loc=$('place').value.trim()|| (language==='th'?'ไม่ระบุสถานที่':'LOCATION NOT SET');
+ $('overlayLocation').textContent=loc.toLocaleUpperCase();
+ $('overlayCaption').textContent=$('caption').value;
+ $('charCount').textContent=$('caption').value.length+' / 180';
+}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),2600)}
+function setPhoto(file){
+ if(!file)return;
+ if(!file.type.startsWith('image/')){toast('Please choose an image file.');return}
+ if(currentImage)URL.revokeObjectURL(currentImage);
+ currentImage=URL.createObjectURL(file);$('photoPreview').src=currentImage;
+ $('photoPreview').style.display='block';$('photoWrap').classList.add('has-photo');$('photoStatus').textContent='Moment selected';
+}
+$('takePhoto').onclick=()=>$('cameraInput').click();
+$('choosePhoto').onclick=()=>$('fileInput').click();
+$('cameraInput').onchange=e=>setPhoto(e.target.files[0]);
+$('fileInput').onchange=e=>setPhoto(e.target.files[0]);
+$('place').addEventListener('input',sync);$('caption').addEventListener('input',sync);
+document.querySelectorAll('[data-lang]').forEach(btn=>btn.addEventListener('click',()=>{
+ language=btn.dataset.lang;document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('active',b===btn));
+ if(language==='th'){$('caption').value='เก็บช่วงเวลาธรรมดา ให้กลายเป็นความทรงจำ';$('place').placeholder='จังหวัด, ประเทศ'}
+ else{$('caption').value='A quiet moment, kept forever.';$('place').placeholder='City / Province, Country'}
+ sync();
+}));
+$('newCaption').onclick=()=>{const list=captions[language];let next=list[Math.floor(Math.random()*list.length)];if(next===$('caption').value)next=list[(list.indexOf(next)+1)%list.length];$('caption').value=next;sync()};
+$('locate').onclick=()=>{
+ if(!navigator.geolocation){toast('Location is not supported by this browser.');return}
+ toast('Requesting location permission…');
+ navigator.geolocation.getCurrentPosition(async pos=>{
+  const {latitude,longitude}=pos.coords;
+  try{
+   const res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=5&accept-language=en`);
+   const data=await res.json();const a=data.address||{};
+   const region=a.state||a.province||a.city||a.county||'';
+   const country=a.country||'';
+   $('place').value=[region,country].filter(Boolean).join(', ')||'Location found';sync();toast('Location added.');
+  }catch(e){toast('Could not resolve the location. Enter it manually.')}
+ },()=>toast('Location permission was not granted. You can enter it manually.'),{timeout:10000,maximumAge:60000});
+};
+function roundedRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+$('download').onclick=async()=>{
+ if(!currentImage){toast('Add a photo before exporting.');return}
+ const img=$('photoPreview');
+ const W=1080,H=1350,canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+ const c=canvas.getContext('2d');
+ c.fillStyle='#111';c.fillRect(0,0,W,H);
+ const scale=Math.max(W/img.naturalWidth,H/img.naturalHeight),iw=img.naturalWidth*scale,ih=img.naturalHeight*scale;
+ c.save();c.beginPath();c.rect(0,0,W,H);c.clip();c.drawImage(img,(W-iw)/2,(H-ih)/2,iw,ih);c.restore();
+ c.fillStyle='rgba(5,5,5,.62)';c.fillRect(42,H-300,W-84,258);
+ c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=2;c.strokeRect(42,H-300,W-84,258);
+ c.fillStyle='#fff';c.font='500 24px Arial,sans-serif';c.letterSpacing='3px';
+ const loc=($('place').value.trim()||'LOCATION NOT SET').toUpperCase();
+ c.fillText(loc.slice(0,52),70,H-245);
+ c.fillStyle='#ddd';c.font='20px Arial,sans-serif';c.letterSpacing='2px';c.fillText(today(),W-230,H-245);
+ c.fillStyle='#fff';c.font='32px Arial,sans-serif';c.letterSpacing='0px';
+ const words=$('caption').value.split(/\s+/);let lines=[],line='';
+ for(const word of words){let test=line?line+' '+word:word;if(c.measureText(test).width>W-145&&line){lines.push(line);line=word}else line=test}
+ if(line)lines.push(line);lines.slice(0,3).forEach((l,i)=>c.fillText(l,70,H-183+i*44));
+ c.fillStyle='#fff';roundedRect(c,W/2-23,20,46,5,3);c.fill();
+ roundedRect(c,W/2-23,H-25,46,5,3);c.fill();
+ try{const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.94));if(!blob)throw new Error('Export failed');const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='photodoc-moment.jpg';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Your photo card is ready.')}
+ catch(e){toast('Could not export this photo. Please try another image.')}
+};
+sync();
+</script>
+</body>
+</html>
